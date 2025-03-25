@@ -1,11 +1,9 @@
 
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
-from sklearn.linear_model import LinearRegression
-import numpy as np
+import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="3D Mission Readiness Analysis (Artificial data)", layout="wide")
+st.set_page_config(page_title="Mission Readiness Explorer (Artificial data)", layout="wide")
 
 @st.cache_data
 def load_data():
@@ -13,74 +11,44 @@ def load_data():
 
 df = load_data()
 
-st.title("🧭 3D Mission Readiness Analysis (Artificial data)")
-st.markdown("Explore the impact of key variables on mission readiness using interactive 3D plots and golden insights.")
+st.title("📊 Mission Readiness Explorer (Artificial data)")
+st.markdown("Explore mission readiness metrics using synthetic data from 100 simulated Air Force bases.")
 
-# Choose top 2 predictors for readiness
-x_var = "Maintenance Issues"
-y_var = "Personnel Gaps"
-z_var = "Readiness"
+# Summary stats
+st.subheader("🔍 Summary Statistics")
+st.dataframe(df.describe())
 
-# Fit a simple regression model for surface
-X = df[[x_var, y_var]]
-y = df[z_var]
-model = LinearRegression()
-model.fit(X, y)
+# Readiness histogram
+st.subheader("📈 Readiness Distribution")
+fig, ax = plt.subplots()
+ax.hist(df["Readiness"], bins=20, color="skyblue", edgecolor="black")
+ax.set_xlabel("Readiness Score")
+ax.set_ylabel("Frequency")
+ax.set_title("Distribution of Readiness Scores")
+st.pyplot(fig)
 
-# Create grid for surface
-x_range = np.linspace(df[x_var].min(), df[x_var].max(), 30)
-y_range = np.linspace(df[y_var].min(), df[y_var].max(), 30)
-x_grid, y_grid = np.meshgrid(x_range, y_range)
-z_pred = model.predict(np.c_[x_grid.ravel(), y_grid.ravel()]).reshape(x_grid.shape)
+# Interpretation
+st.markdown("**Interpretation:** Most readiness scores fall between 60 and 90, indicating moderate operational health. Outliers below 60 may indicate urgent issues at specific bases.")
 
-# Create 3D plot
-fig = go.Figure()
+# Maintenance bar chart
+st.subheader("🔧 Maintenance Issues")
+fig2, ax2 = plt.subplots()
+df["Maintenance Issues"].value_counts().sort_index().plot(kind="bar", color="orange", ax=ax2)
+ax2.set_xlabel("Issue Level")
+ax2.set_ylabel("Number of Bases")
+ax2.set_title("Maintenance Issues Across Bases")
+st.pyplot(fig2)
 
-# Regression surface
-fig.add_trace(go.Surface(
-    x=x_range, y=y_range, z=z_pred,
-    colorscale="Viridis", opacity=0.5,
-    name="Regression Surface"
-))
+# Interpretation
+st.markdown("**Interpretation:** The most frequent maintenance levels are between 2–4. Bases with 6+ issues are at higher risk of readiness degradation and may need immediate attention.")
 
-# Data points
-colors = df[z_var]
-fig.add_trace(go.Scatter3d(
-    x=df[x_var],
-    y=df[y_var],
-    z=df[z_var],
-    mode='markers',
-    marker=dict(
-        size=6,
-        color=colors,
-        colorscale='RdYlGn',
-        colorbar=dict(title="Readiness"),
-        opacity=0.8
-    ),
-    text=df["Base"],
-    hovertemplate="<b>%{text}</b><br>" + x_var + ": %{x}<br>" + y_var + ": %{y}<br>Readiness: %{z}<extra></extra>",
-    name="Bases"
-))
+# Readiness score formula and tooltips
+st.subheader("🧮 Readiness Score Formula (Synthetic)")
+st.markdown("**Readiness = 100 - (Mission Impact Score + Maintenance Issues Weighted + Personnel Gaps)**")
 
-fig.update_layout(
-    scene=dict(
-        xaxis_title=x_var,
-        yaxis_title=y_var,
-        zaxis_title="Readiness"
-    ),
-    margin=dict(l=0, r=0, b=0, t=0)
-)
-
-st.subheader("📈 3D Readiness Plot")
-st.plotly_chart(fig, use_container_width=True)
-
-# Golden questions + answers
-st.subheader("💡 Golden Questions & Answers")
-st.markdown("**Q1:** Which variables have the strongest impact on readiness?")
-st.markdown("**A1:** Maintenance Issues and Personnel Gaps show the highest correlation with readiness.")
-
-st.markdown("**Q2:** What pattern does the 3D plot reveal?")
-st.markdown("**A2:** As maintenance issues and personnel gaps increase, readiness tends to decrease. Lower values cluster at the surface trough.")
-
-st.markdown("**Q3:** Where are the highest-performing bases?")
-st.markdown("**A3:** Bases with low maintenance and minimal personnel gaps appear in the green/blue high-readiness zone.")
+st.subheader("🛠️ Maintenance Issue Levels Explained")
+st.markdown("""
+- **0–2 (Low):** Minor or negligible impact  
+- **3–5 (Moderate):** Operational caution advised  
+- **6+ (High):** Significant risk to mission capability
+""")
