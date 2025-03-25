@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -20,7 +19,7 @@ st.dataframe(df.describe())
 
 # Readiness histogram
 st.subheader("📈 Readiness Distribution")
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(8, 4))  # Resized plot
 ax.hist(df["Readiness"], bins=20, color="skyblue", edgecolor="black")
 ax.set_xlabel("Readiness Score")
 ax.set_ylabel("Frequency")
@@ -32,7 +31,7 @@ st.markdown("**Interpretation:** Most readiness scores fall between 60 and 90, i
 
 # Maintenance bar chart
 st.subheader("🔧 Maintenance Issues")
-fig2, ax2 = plt.subplots()
+fig2, ax2 = plt.subplots(figsize=(8, 4))  # Resized plot
 df["Maintenance Issues"].value_counts().sort_index().plot(kind="bar", color="orange", ax=ax2)
 ax2.set_xlabel("Issue Level")
 ax2.set_ylabel("Number of Bases")
@@ -47,8 +46,8 @@ st.subheader("🧮 Readiness Score Formula (Synthetic)")
 st.markdown("**Readiness = 100 - (Mission Impact Score + Maintenance Issues Weighted + Personnel Gaps)**")
 
 st.subheader("🛠️ Maintenance Issue Levels Explained")
-st.markdown("""
+st.markdown(\"""
 - **0–2 (Low):** Minor or negligible impact  
 - **3–5 (Moderate):** Operational caution advised  
 - **6+ (High):** Significant risk to mission capability
-""")
+\""")
