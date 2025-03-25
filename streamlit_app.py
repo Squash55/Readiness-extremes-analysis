@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Mission Readiness Explorer (Artificial data)", layout="wide")
+st.set_page_config(page_title="Readiness Extremes Analysis (Artificial data)", layout="wide")
 
 @st.cache_data
 def load_data():
@@ -10,44 +9,31 @@ def load_data():
 
 df = load_data()
 
-st.title("📊 Mission Readiness Explorer (Artificial data)")
-st.markdown("Explore mission readiness metrics using synthetic data from 100 simulated Air Force bases.")
+st.title("📊 Readiness Extremes Analysis (Artificial data)")
+st.markdown("Explore the top and bottom readiness scores across Air Force bases with their associated mission data.")
 
-# Summary stats
-st.subheader("🔍 Summary Statistics")
-st.dataframe(df.describe())
+# Dropdown to select number of top/bottom entries
+top_n = st.selectbox("Select number of top/bottom entries to display:", [5, 10, 20], index=1)
 
-# Readiness histogram
-st.subheader("📈 Readiness Distribution")
-fig, ax = plt.subplots(figsize=(8, 4))  # Resized plot
-ax.hist(df["Readiness"], bins=20, color="skyblue", edgecolor="black")
-ax.set_xlabel("Readiness Score")
-ax.set_ylabel("Frequency")
-ax.set_title("Distribution of Readiness Scores")
-st.pyplot(fig)
+# Top readiness scores
+st.subheader(f"🔝 Top {top_n} Readiness Scores")
+df_top = df.sort_values(by="Readiness", ascending=False).head(top_n)
+st.dataframe(df_top.reset_index(drop=True))
 
-# Interpretation
-st.markdown("**Interpretation:** Most readiness scores fall between 60 and 90, indicating moderate operational health. Outliers below 60 may indicate urgent issues at specific bases.")
+# Bottom readiness scores
+st.subheader(f"🔻 Bottom {top_n} Readiness Scores")
+df_bottom = df.sort_values(by="Readiness", ascending=True).head(top_n)
+st.dataframe(df_bottom.reset_index(drop=True))
 
-# Maintenance bar chart
-st.subheader("🔧 Maintenance Issues")
-fig2, ax2 = plt.subplots(figsize=(8, 4))  # Resized plot
-df["Maintenance Issues"].value_counts().sort_index().plot(kind="bar", color="orange", ax=ax2)
-ax2.set_xlabel("Issue Level")
-ax2.set_ylabel("Number of Bases")
-ax2.set_title("Maintenance Issues Across Bases")
-st.pyplot(fig2)
+# Plain-language insight for bottom entries
+st.subheader("🧠 Plain-Language Insights for Lowest Scores")
+for i, row in df_bottom.iterrows():
+    st.markdown(f"- **{row['Base']}** (Readiness: {row['Readiness']}) | Mission: {row['Mission']}, Maintenance Issues: {row['Maintenance Issues']}")
 
-# Interpretation
-st.markdown("**Interpretation:** The most frequent maintenance levels are between 2–4. Bases with 6+ issues are at higher risk of readiness degradation and may need immediate attention.")
+# Pattern insight for top scorers
+most_common_top_mission = df_top["Mission"].mode()[0]
+low_issue_count = (df_top["Maintenance Issues"] <= 2).sum()
 
-# Readiness score formula and tooltips
-st.subheader("🧮 Readiness Score Formula (Synthetic)")
-st.markdown("**Readiness = 100 - (Mission Impact Score + Maintenance Issues Weighted + Personnel Gaps)**")
-
-st.subheader("🛠️ Maintenance Issue Levels Explained")
-st.markdown(\"""
-- **0–2 (Low):** Minor or negligible impact  
-- **3–5 (Moderate):** Operational caution advised  
-- **6+ (High):** Significant risk to mission capability
-\""")
+st.subheader("🔎 Pattern Summary")
+st.markdown(f"Most high-readiness scores are associated with the **{most_common_top_mission}** mission type.")
+st.markdown(f"🛠️ {low_issue_count} out of {top_n} top bases have ≤2 maintenance issues.")
