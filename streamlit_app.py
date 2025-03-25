@@ -1,7 +1,9 @@
+
 import streamlit as st
 import pandas as pd
+import numpy as np
 
-st.set_page_config(page_title="Readiness Extremes Analysis (Artificial data)", layout="wide")
+st.set_page_config(page_title="Dynamic Readiness Interpreter (Artificial data)", layout="wide")
 
 @st.cache_data
 def load_data():
@@ -9,31 +11,48 @@ def load_data():
 
 df = load_data()
 
-st.title("📊 Readiness Extremes Analysis (Artificial data)")
-st.markdown("Explore the top and bottom readiness scores across Air Force bases with their associated mission data.")
+st.title("🧠 Dynamic Readiness Interpreter (Artificial data)")
+st.markdown("Real-time plain-language analysis of readiness trends, issues, and mission patterns.")
 
-# Dropdown to select number of top/bottom entries
-top_n = st.selectbox("Select number of top/bottom entries to display:", [5, 10, 20], index=1)
+# Key metrics
+min_r = df["Readiness"].min()
+max_r = df["Readiness"].max()
+mean_r = df["Readiness"].mean()
+median_r = df["Readiness"].median()
+std_r = df["Readiness"].std()
 
-# Top readiness scores
-st.subheader(f"🔝 Top {top_n} Readiness Scores")
-df_top = df.sort_values(by="Readiness", ascending=False).head(top_n)
-st.dataframe(df_top.reset_index(drop=True))
+st.subheader("📊 Readiness Stats")
+st.markdown(f"**Readiness Range:** {min_r:.1f} to {max_r:.1f} | Mean: {mean_r:.1f} | Median: {median_r:.1f} | Std Dev: {std_r:.1f}")
 
-# Bottom readiness scores
-st.subheader(f"🔻 Bottom {top_n} Readiness Scores")
-df_bottom = df.sort_values(by="Readiness", ascending=True).head(top_n)
-st.dataframe(df_bottom.reset_index(drop=True))
+# Outliers
+low_outliers = df[df["Readiness"] < mean_r - std_r]
+high_outliers = df[df["Readiness"] > mean_r + std_r]
 
-# Plain-language insight for bottom entries
-st.subheader("🧠 Plain-Language Insights for Lowest Scores")
-for i, row in df_bottom.iterrows():
-    st.markdown(f"- **{row['Base']}** (Readiness: {row['Readiness']}) | Mission: {row['Mission']}, Maintenance Issues: {row['Maintenance Issues']}")
+st.subheader("📉 Notable Outliers")
+st.markdown(f"- **{len(low_outliers)} bases** have unusually **low readiness** (< {mean_r - std_r:.1f})")
+st.markdown(f"- **{len(high_outliers)} bases** show **exceptional readiness** (> {mean_r + std_r:.1f})")
 
-# Pattern insight for top scorers
-most_common_top_mission = df_top["Mission"].mode()[0]
-low_issue_count = (df_top["Maintenance Issues"] <= 2).sum()
+# Mission patterns
+low_mission_mode = low_outliers["Mission"].mode()[0] if not low_outliers.empty else "N/A"
+high_mission_mode = high_outliers["Mission"].mode()[0] if not high_outliers.empty else "N/A"
 
-st.subheader("🔎 Pattern Summary")
-st.markdown(f"Most high-readiness scores are associated with the **{most_common_top_mission}** mission type.")
-st.markdown(f"🛠️ {low_issue_count} out of {top_n} top bases have ≤2 maintenance issues.")
+st.subheader("🔎 Mission Pattern Insights")
+st.markdown(f"- Among **low readiness** bases, the most common mission is **{low_mission_mode}**")
+st.markdown(f"- Among **high readiness** bases, the most common mission is **{high_mission_mode}**")
+
+# Maintenance correlation
+low_maint_avg = low_outliers["Maintenance Issues"].mean() if not low_outliers.empty else 0
+high_maint_avg = high_outliers["Maintenance Issues"].mean() if not high_outliers.empty else 0
+
+st.subheader("🛠️ Maintenance Impact Summary")
+st.markdown(f"- Average maintenance issues for **low readiness** bases: **{low_maint_avg:.1f}**")
+st.markdown(f"- Average maintenance issues for **high readiness** bases: **{high_maint_avg:.1f}**")
+
+# Summary
+st.subheader("📋 Summary")
+st.markdown(f"""
+- Bases with **readiness below {mean_r - std_r:.1f}** may require urgent intervention.
+- Mission type **{low_mission_mode}** appears frequently among underperformers.
+- Lower readiness correlates with **higher average maintenance issues**.
+- Recommend closer analysis of **maintenance drivers** and **mission planning** for {low_mission_mode} bases.
+""")
